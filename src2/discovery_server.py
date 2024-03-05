@@ -1,38 +1,43 @@
-# discovery_server.py
-import json
 import socket
 import threading
 
-class DiscoveryServer:
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self.nodes = set()  # Conjunto para armazenar os nós ativos
-        self.server = None
+# Função para lidar com a conexão de novos pares
+def handle_client(client_socket):
+    print("[*] Conexão recebida de:", client_socket.getpeername())
+    # Lógica para lidar com a comunicação com o par conectado
+    # Aqui você pode implementar o protocolo de troca de dados P2P
+    client_socket.close()
 
-    def start(self):
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((self.host, self.port))
-        self.server.listen()
+def start_server():
+    # Configuração do servidor
+    host = "0.0.0.0"  # Todas as interfaces de rede
+    port = 9999  # Porta para ouvir conexões
 
-        print(f"Discovery server started on {self.host}:{self.port}")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+    server.listen(5)
 
-        while True:
-            client_socket, _ = self.server.accept()
-            threading.Thread(target=self.handle_client, args=(client_socket,)).start()
+    print("[*] Servidor P2P iniciado em:", host, "na porta:", port)
 
-    def handle_client(self, client_socket):
-        # Adiciona o endereço do nó à lista de nós ativos
-        node_address = client_socket.recv(1024).decode()
-        self.nodes.add(node_address)
-        print(f"Node {node_address} connected.")
+    # Loop para aceitar conexões de novos pares
+    while True:
+        client_socket, addr = server.accept()
+        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+        client_handler.start()
 
-        # Envie a lista de outros nós ativos para o novo nó
-        client_socket.send(json.dumps(list(self.nodes)).encode())
+def connect_to_peer(peer_host, peer_port):
+    # Lógica para se conectar a um par específico
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((peer_host, peer_port))
+    # Lógica para trocar dados com o par conectado
+    client.close()
 
-    def get_active_nodes(self):
-        return list(self.nodes)
+# Iniciar servidor em uma thread separada
+server_thread = threading.Thread(target=start_server)
+server_thread.start()
 
-if __name__ == "__main__":
-    discovery_server = DiscoveryServer("localhost", 5001)
-  
+# Exemplo de como conectar-se a outro par
+# Você pode expandir isso para permitir que o usuário insira o endereço do par
+peer_host = "127.0.0.1"
+peer_port = 9999
+connect_to_peer(peer_host, peer_port)
