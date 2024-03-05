@@ -1,4 +1,5 @@
 import socket
+from net_scan import scan_local_network
 
 def start_server():
     host = "0.0.0.0"  # Escuta em todas as interfaces de rede
@@ -13,20 +14,12 @@ def start_server():
     return server
 
 def check_other_servers():
-    other_servers = ["10.0.0.1", "10.0.0.2"]  # Exemplo de outros servidores conhecidos na rede
-    for server_ip in other_servers:
-        try:
-            # Tenta conectar-se a outro servidor
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(1)  # Define um tempo limite curto para a conexão
-                s.connect((server_ip, 9999))
-                print("[*] Servidor encontrado em:", server_ip)
-                return True
-        except (socket.timeout, ConnectionRefusedError):
-            pass  # Ignora se a conexão falhar ou se o tempo limite for atingido
+    other_servers = scan_local_network()
+    if other_servers:
+        print("[*] Outros servidores ativos encontrados na rede. Não é o primeiro servidor.")
+    else:
+        print("[*] Nenhum outro servidor ativo na rede. Este é o primeiro servidor.")
 
-    print("[*] Nenhum outro servidor encontrado na rede")
-    return False
 
 def main():
     # Verifica se há outros servidores ativos na rede
