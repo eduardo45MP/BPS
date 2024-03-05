@@ -1,7 +1,7 @@
 import socket
 import threading
 import hashlib
-from zeroconf import ServiceInfo, Zeroconf
+import socket
 
 class P2PNode:
     def __init__(self, host, port):
@@ -10,8 +10,6 @@ class P2PNode:
         self.id = self.generate_node_id()
         self.peers = []
         self.server = None
-        self.zeroconf = Zeroconf()
-        self.service_info = None
 
     def generate_node_id(self):
         node_address = f"{self.host}:{self.port}"
@@ -21,19 +19,6 @@ class P2PNode:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.server.listen()
-
-        # Announce the service using mDNS
-        self.service_info = ServiceInfo(
-            "_blockchain._tcp.local.",
-            f"Blockchain Node {self.host}",
-            socket.inet_aton(self.host),
-            self.port,
-            0,
-            0,
-            {},
-            "blockchain.local.",
-        )
-        self.zeroconf.register_service(self.service_info)
 
         print(f"Server started on {self.host}:{self.port}")
 
@@ -73,6 +58,6 @@ class P2PNode:
                 break
 
 if __name__ == "__main__":
-    node = P2PNode("localhost", 5000)
+    node = P2PNode("127.0.0.1", 5000)
     print(f"Node ID: {node.id}")
     node.start_server()
