@@ -1,17 +1,39 @@
 import socket
 import threading
+import hashlib
+from zeroconf import ServiceInfo, Zeroconf
 
 class P2PNode:
     def __init__(self, host, port):
         self.host = host
         self.port = port
+        self.id = self.generate_node_id()
         self.peers = []
         self.server = None
+        self.zeroconf = Zeroconf()
+        self.service_info = None
+
+    def generate_node_id(self):
+        node_address = f"{self.host}:{self.port}"
+        return hashlib.sha256(node_address.encode()).hexdigest()
 
     def start_server(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.server.listen()
+
+        # Announce the service using mDNS
+        self.service_info = ServiceInfo(
+            "_blockchain._tcp.local.",
+            f"Blockchain Node {self.host}",
+            socket.inet_aton(self.host),
+            self.port,
+            0,
+            0,
+            {},
+            "blockchain.local.",
+        )
+        self.zeroconf.register_service(self.service_info)
 
         print(f"Server started on {self.host}:{self.port}")
 
@@ -36,9 +58,7 @@ class P2PNode:
                 message = peer_socket.recv(1024).decode()
                 if message:
                     print(f"Received message from peer: {message}")
-                    # Aqui você pode processar a mensagem recebida conforme necessário
-                    # Por exemplo, você pode verificar se a mensagem é válida e executar ação com base nela
-                    # Ou encaminhar a mensagem para outros nós na rede, se necessário
+                    # Process the received message as needed
 
     def handle_client(self, client_socket):
         while True:
@@ -46,15 +66,13 @@ class P2PNode:
                 message = client_socket.recv(1024).decode()
                 if message:
                     print(f"Received message from client: {message}")
-                    # Aqui você pode processar a mensagem recebida do cliente e executar ação com base nela
-                    # Por exemplo, você pode tratar solicitações de transações, blocos, etc.
-                    # e responder de acordo com o protocolo da sua rede Blockchain
+                    # Process the received message as needed
             except ConnectionResetError:
-                # Se a conexão com o cliente for perdida, remova-o da lista de peers e encerre o loop
                 print("Client disconnected.")
                 self.peers.remove(client_socket)
                 break
 
 if __name__ == "__main__":
     node = P2PNode("localhost", 5000)
+    print(f"Node ID: {node.id}")
     node.start_server()
