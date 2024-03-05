@@ -1,19 +1,13 @@
 import socket
 import threading
-import hashlib
-import socket
+import json
 
 class P2PNode:
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.id = self.generate_node_id()
         self.peers = []
         self.server = None
-
-    def generate_node_id(self):
-        node_address = f"{self.host}:{self.port}"
-        return hashlib.sha256(node_address.encode()).hexdigest()
 
     def start_server(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,7 +37,7 @@ class P2PNode:
                 message = peer_socket.recv(1024).decode()
                 if message:
                     print(f"Received message from peer: {message}")
-                    # Process the received message as needed
+                    # Aqui você pode processar a mensagem recebida conforme necessário
 
     def handle_client(self, client_socket):
         while True:
@@ -51,13 +45,12 @@ class P2PNode:
                 message = client_socket.recv(1024).decode()
                 if message:
                     print(f"Received message from client: {message}")
-                    # Process the received message as needed
+                    # Aqui você pode processar a mensagem recebida do cliente
             except ConnectionResetError:
                 print("Client disconnected.")
                 self.peers.remove(client_socket)
                 break
 
 if __name__ == "__main__":
-    node = P2PNode("127.0.0.1", 5000)
-    print(f"Node ID: {node.id}")
+    node = P2PNode("localhost", 5000)
     node.start_server()
